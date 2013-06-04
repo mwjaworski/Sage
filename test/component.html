@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+	
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Sage</title>
+	                                 
+</head>
+<body>
+
+	<script src="../lib/underscore-min.js"></script>
+  <script src="../lib/jsdeferred-min.js"></script>
+  <script src="../lib/taffy-min.js"></script>
+	<script src="../lib/hotload.js"></script>
+	<script>
+ 	 	goog.hotloadVersion("1");
+		goog.hotloadPrefix("../src/");	
+	</script>
+  <script src="../src/sage/library.js"></script>
+  <script>
+	  goog.require("sage.library");
+  </script>  
+  <script>
+
+  	sage.initialize();
+  
+		sage.component("Position", {
+			
+			startup: function PositionComponentStartup(config) {
+				
+				this.x = (config.x !== undefined) ? config.x : 0;
+				this.y = (config.y !== undefined) ? config.y : 0;
+				this.z = (config.z !== undefined) ? config.z : 0;
+			}
+		
+		});
+  	
+		sage.component("Draggable", {
+			
+			startup: function DraggableComponentStartup(config) {
+				
+				// one component can include others, if there are dependencies
+				var visual = this.include("Visual");
+				
+				// visual added kinetic
+				this.kinectic.on("drag", this.onDrag);				
+			},
+			
+			onDrag: function() {
+				
+			}
+		
+		});
+		
+		sage.component("Hospital", {
+			
+			startup: function HospitalComponentStartup(config) {
+				
+				this.health = 0;
+				this.patients = 0;
+				this.maxPatients = config.maxPatients;
+				
+			},
+			
+			update: function HospitalComponentStartup() {
+				
+				this.health 	= 	(patients >= 30 && patients < 70) ? 1
+												: (patients >= 70) ? 2
+												: 0;
+				
+				this.patients = 	(this.patients > this.maxPatients) 
+												? this.maxPatients
+												: this.patients;
+			}
+		
+		});
+		
+		sage.component("Visual", {
+			
+			startup: function VisualComponentStartup(config) {
+				
+				var Shape = (function() { this.on = function() {}; });
+				
+				// object added to entity
+				this.kinectic = new Shape(config.pathToImage);
+				
+			}
+		
+		});
+				
+		var e1 =  sage.entity()
+									.include("Hospital")
+									.include("Position", { x:3 })
+									.include("Draggable")
+									.include("Visual", {
+										png: "path or iamge to hospital graphic"
+									});
+
+    var e2 = 	sage.entity({
+    	
+    	Position: {
+    		y: 4
+    	},
+    	Visual: {
+				png: "different path"
+			}
+    	
+    });
+    
+		var e3 = e1.clone();
+		
+		
+		
+  </script>
+  
+  
+</body>
+</html>

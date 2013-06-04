@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE project>
+<project 
+	name="MX Build Script [Sage]"  
+	basedir=".">
+
+	<property environment="ENV" />
+	<property file="user.properties" />
+	
+	<target name="-set.dev"><property name="build.state" value="build.dev" /></target>
+	<target name="-set.stage"><property name="build.state" value="build.stage" /></target>
+	<target name="-set.prod"><property name="build.state" value="build.prod" /></target>
+	<target name="-set.unit"><property name="build.state" value="test.unit" /></target>
+	<target name="-set.compiler"><property name="build.state" value="test.compiler" /></target>
+	
+	<target name="-build.dependencies"
+					depends="-build.nucleus, -build.fyre, -build.ice, -build.phoenix" />			
+
+	<target name="build.dev" depends="-set.dev, -build.dependencies, -build.project" />			
+	<target name="build.stage" depends="-set.stage, -build.dependencies, -build.project" />
+	<target name="build.prod" depends="-set.prod, -build.dependencies, -build.project" />
+	<target name="test.unit" depends="-set.unit, -build.project" />
+	<target name="test.compiler" depends="-set.compiler, -build.project" />		
+	
+	<!-- library dependency builder -->
+	<macrodef name="library">
+		
+		<attribute name="external" />	  
+		<attribute name="internal" />
+		
+		<sequential>	  
+			
+			<condition property="build.command" value="build.prod">
+				<equals arg1="${build.state}" arg2="build.dev" />
+		  </condition>
+			
+			<condition property="build.command" value="${build.state}">
+				<not>
+					<equals arg1="${build.state}" arg2="build.dev" />
+				</not>
+		  </condition>
+			
+			<subant target="${build.command}">
+				<fileset dir="${app.dir.project-root}/@{external}/build" includes="build.xml" />	
+			</subant>
+			
+			<mkdir dir="${library.path}" />							
+			<copy todir="${library.path}">									
+				<dirset dir="${app.dir.project-root}/@{external}/deploy" 
+								includes="*, **/*" />					
+				<fileset dir="${app.dir.project-root}/@{external}/deploy">
+					<include name="**/*" />
+				</fileset>					
+			</copy>
+			
+		</sequential>		
+	</macrodef>
+
+	
+	<!-- NUCLEUS -->
+	<target name="-build.nucleus"
+					if="${nucleus.use}"
+					description="call to nucleus to build and copy itself">
+	
+		<library 	external="Nucleus" 
+							internal="nucleus" />
+	</target>
+	
+	<!-- FYRE -->
+	<target name="-build.fyre"
+					if="${fyre.use}"
+					description="call to fyre to build and copy itself">
+	
+		<library 	external="Fyre" 
+							internal="fyre" />
+	</target>
+
+	<!-- INCENDIARY -->
+	<target name="-build.ice"
+					if="${ice.use}"
+					description="call to incendiary to build and copy itself">
+	
+		<library 	external="Ice" 
+							internal="ice" />
+	</target>
+
+	<!-- PHOENIX -->
+	<target name="-build.phoenix"
+					if="${phoenix.use}"
+					description="call to phoenix to build and copy itself">
+	
+		<library 	external="Phoenix" 
+							internal="phx" />
+	</target>
+	
+	<!-- APPLICATION -->
+	<target name="-build.project"
+					if="${app.use}"
+					description="call to master build scripts for this project">
+	
+		<property name="master.path" value="${app.dir.project-root}/Nucleus/build/master"/>
+	
+		<condition property="target.path.master" value="./master">
+			<available file="master/" type="dir" />
+		</condition>
+	
+		<condition property="target.path.master" value="${master.path}">
+			<available file="${master.path}" type="dir" />
+		</condition>		
+
+		<subant target="${build.state}">			
+			<property name="app.dir.base" value="${basedir}/${app.dir.app-root}" />
+			<property file="user.properties" />
+			<fileset dir="${target.path.master}" includes="build.xml" />
+		</subant>
+		
+	</target>
+	
+</project>
