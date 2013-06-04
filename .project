@@ -3,14 +3,9 @@
 	<name>Sage</name>
 	<comment></comment>
 	<projects>
-		<project>EaselJS</project>
-		<project>PreloadJS</project>
-		<project>SoundJS</project>
-		<project>TweenJS</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>
 	<natures>
-		<nature>org.eclipse.wst.common.project.facet.core.nature</nature>
 	</natures>
 </projectDescription>
