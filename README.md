@@ -10,25 +10,25 @@ executed via logic or timed events or continuously to drive game logic.
 
 ## Example
 
-sage.initialize();
-sage.entity().component("Walkable").component("Monster");
-sage.component("Monster", {
+	sage.initialize();
+	sage.entity().component("Walkable").component("Monster");
+	sage.component("Monster", {
 
-	startup: function() {
-	
-		this.health = 100;
-		this.strength = 10;
-	}
-	
-	update: function() {
-	
-		if (this.health < 10) {
+		startup: function() {
 		
-			// call your code to retreat
+			this.health = 100;
+			this.strength = 10;
 		}
-	}
-	
-});
+		
+		update: function() {
+		
+			if (this.health < 10) {
+			
+				// call your code to retreat
+			}
+		}
+		
+	});
 
 
 ## Support and Resources
