@@ -65,7 +65,7 @@ sage.kernel = (function() {
 	/**
 	 * 
 	 */
-	var scheduler = (function() {
+	var scheduler = (function Scheduler() {
 
 		var period, workload, beforeTime, afterTime, timeDelta, timer;
 
@@ -105,20 +105,12 @@ sage.kernel = (function() {
 			for (; i < n; i++) {
 
 				process = queue[i];
-				if (isTime(process, time)) {
+				if (time.processTimeReadyToFire(process)) {
 					process.update();
 				}
 			}
 		};
 
-		/**
-		 * 
-		 */
-		var isTime = function(process, time) {
-			
-			return true;
-		};
-		
 		/**
 		 * 
 		 */
@@ -300,9 +292,6 @@ sage.kernel = (function() {
 	api.add = function(process) {
 
 		adt.add.push(process);
-		/*
-		 * var qid = adt.queue.length; if (process.component.update === undefined) { return -1; } adt.add[qid] = process; process.qid = qid;
-		 */
 		return qid;
 	};
 
@@ -313,19 +302,8 @@ sage.kernel = (function() {
 
 		adt.remove.push(process);
 		return process;
-
-		/*
-		 * var process = if (!(adt.queue.length > 0 && qid != -1)) { return undefined; }
-		 */
-
 	};
-
-	/*
-	 * api.remove = function(qid) { var removeProcess, activeProcess; var removeProcessLocation = adt.indexOfLastActive - 1; if (adt.queue.length === 0) { return undefined; } if (qid === -1) { return
-	 * undefined; } activeProcess = adt.queue[removeProcessLocation]; removeProcess = adt.queue[qid]; activeProcess.qid = qid; removeProcess.qid = removeProcessLocation; adt.queue[activeProcess.qid] =
-	 * activeProcess; adt.queue[removeProcess.qid] = removeProcess; adt.indexOfLastActive = removeProcessLocation; return removeProcess; };
-	 */
-
+	
 	return api;
 
 })();

@@ -67,6 +67,62 @@ sage.time = (function SageTime() {
 		return real.delta;
 	};
 
+	/**
+	 * 
+	 */
+	api.convertTimedProcessFormat = function(profile) {
+		
+		var units = (profiles.units === undefined) ? "ms" 
+								: profiles.units,
+				convertToMilliseconds = 	(units === "ms") ? 1
+																: (units === "s")	? 1000
+																: (units === "min")	? 60000
+																: 0;
+		
+		profile.repeat 		= (profile.repeat === undefined) 
+												? -1 : profile.repeat;
+		
+		profile.frequency = (profile.frequency === undefined) 
+												? 1 : profile.frequency;
+		
+		profile.offset		= (profile.offset === undefined)
+												? 0 : profile.offset;
+		
+		if (units !== "game") {
+		
+			profile.offset 		*= convertToMilliseconds;
+			profile.frequency *= convertToMilliseconds;
+		}
+
+		profile.lastUpdate = Date.now();
+		
+		return profile;
+	};
+	
+	/**
+	 * 
+	 */
+	api.isProcessReadyToFire = function(process) {
+		
+		var profile = process.timed,
+				currentTime	= (units === "game") ? game.now : real.now;
+
+		if (currentTime - )
+		
+		if (currentTime - profile.lastUpdate) >= profile.frequency) {
+			
+			if (profile.repeat > 0) {
+				profile.repeat -= 1;
+			}
+			else if (profile.repeat === 0) {
+				process.remove();
+			}
+			return true;
+		}
+		
+		return true;
+	};	
+	
 	return api;
 
 })();
