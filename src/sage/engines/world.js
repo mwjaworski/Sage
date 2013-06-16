@@ -26,6 +26,7 @@
 */
 goog.provide("sage.engines.world");
 goog.require("sage.utilities.pool");
+goog.require("sage.utilities.query");
 goog.require("sage.engines.kernel");
 goog.require("sage.types.entity");
 goog.require("sage.types.process");
@@ -63,14 +64,6 @@ sage.world = (function() {
 		configuration = _.extend(configuration, configurationIn);		
 	};
 	
-	/** */
-	sage.query = function Query(query) {
-		
-		
-		return this;
-	};
-	
-	
 	/**
 	 * create a new entity as blank or from a template
 	 * 
@@ -105,12 +98,6 @@ sage.world = (function() {
 		//entity.kill();
 		db.entities({pkid:entity.pkid}).remove();
 		sage.pool.yield("Entity", entity);
-		
-		/*
-		db.processes({eid:entity.pkid}).each(function(process) {			
-			sage.exclude(process);			
-		}).remove();			
-		*/
 		
 		db.processes({eid:entity.pkid}).each(function(process) {			
 			sage.exclude(process);			

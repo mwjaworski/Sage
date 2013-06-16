@@ -25,6 +25,7 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 goog.provide("sage.types.entity");
+goog.require("sage.utilities.query");
 goog.require("sage.sage");
 
 /**
@@ -57,9 +58,9 @@ sage.types.entity = (function EntityDefinition() {
 		};
 		
 		/** @see sage.entity */
-		this.spawn = function() {			
+		this.spawn = function(template) {			
 			
-			return sage.entity();
+			return sage.entity(template);
 		};
 		
 		/** @see sage.kill */

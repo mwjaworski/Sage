@@ -234,7 +234,7 @@ sage.kernel = (function() {
 	/**
 	 * @param settings assign performance metrics
 	 */
-	api.initialize = function(settings) {
+	api.initialize = function(userSettings) {
 
 		adt.queue = [];
 		adt.add = [];
@@ -242,17 +242,18 @@ sage.kernel = (function() {
 		adt.operationalIndexZero = 0;
 		adt.previous = 0;
 		adt.current = 0;
-
-		api.settings(configuration);
-		api.settings(settings);
+		
+		settings = _.extend({}, configuration);
+		
+		api.settings(userSettings);
 		return settings
 	};
 
 	/**  */
-	api.settings = function(value) {
-
-		if (value) {
-			settings = api.settings = _.extend(settings, value);
+	api.settings = function(userSettings) {
+				
+		if (userSettings) {
+			settings = _.extend(settings, userSettings);
 		}
 		return settings;
 	}
@@ -292,7 +293,8 @@ sage.kernel = (function() {
 	api.add = function(process) {
 
 		adt.add.push(process);
-		return qid;
+		process.qid = adt.add.length;
+		return process.qid;
 	};
 
 	/** remove process from adt and swap last active process into empty place */
