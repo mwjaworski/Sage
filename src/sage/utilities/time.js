@@ -32,22 +32,22 @@ goog.require("sage.sage");
 sage.time = (function SageTime() {
 
 	var real = {
-		start: 0,
-		delta: 0,
-		now: 0
-	};
-	var game = {
-		now: 0
-	};
-	var api = {};
+				start: 0,
+				delta: 0,
+				now: 0
+			},
+			game = {
+				now: 0
+			},
+			api = {};
 
 	/**
 	 * 
 	 */
-	api.initialize = function() {
+	api.initialize = function(configuration) {
 
 		api.real = real;
-		api.game = game;
+		api.game = game;		
 		return this;
 	};
 
@@ -107,9 +107,7 @@ sage.time = (function SageTime() {
 		var profile = process.timed,
 				currentTime	= (units === "game") ? game.now : real.now;
 
-		if (currentTime - )
-		
-		if (currentTime - profile.lastUpdate) >= profile.frequency) {
+		if ((currentTime - profile.lastUpdate) >= profile.frequency) {
 			
 			if (profile.repeat > 0) {
 				profile.repeat -= 1;

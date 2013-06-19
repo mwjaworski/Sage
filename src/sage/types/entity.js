@@ -25,7 +25,6 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 goog.provide("sage.types.entity");
-goog.require("sage.utilities.query");
 goog.require("sage.sage");
 
 /**
@@ -41,8 +40,13 @@ sage.types.entity = (function EntityDefinition() {
 	});
 	
 	entity.prototype = new (function EntityPrototype() {
+	
+		/** use fn to add methods to all entities */
+		this.fn = this;
 		
-		/**  */
+		/** 
+		 * a new entity with the same components attached, but without duplicate data 
+		 */
 		this.clone = function(initializeWithAll) {
 			
 			var entity = this.spawn();

@@ -26,7 +26,6 @@
 */
 goog.provide("sage.engines.world");
 goog.require("sage.utilities.pool");
-goog.require("sage.utilities.query");
 goog.require("sage.engines.kernel");
 goog.require("sage.types.entity");
 goog.require("sage.types.process");
@@ -43,9 +42,8 @@ sage.world = (function() {
 
 	/**  
 	 * clear configuration, clear databases, connect type templates
-	 */
-	
-	api.initialize = function(configurationIn) {
+	 */	
+	api.initialize = function worldInitialize(configurationIn) {
 				
 		configuration = {				
 			nextEntityID	: 0,
@@ -61,7 +59,26 @@ sage.world = (function() {
 		Entity	= sage.types.entity;
 		Process	= sage.types.process;
 		
-		configuration = _.extend(configuration, configurationIn);		
+		configuration = _.extend(configuration, configurationIn);
+		return this;
+	};
+	
+	/**
+	 * query the world
+	 */
+	sage.query = {
+			
+		/** @return component or undefined */
+		getComponent: function getComponent(cid) {
+			
+			return api.components({pkid:cid}).first();
+		},
+			
+		/** @return process or undefined */
+		getProcess: function getProcess(eid, cid) {
+			
+			return api.processes({eid:eid, cid:cid}).first();
+		}	
 	};
 	
 	/**
@@ -69,9 +86,8 @@ sage.world = (function() {
 	 * 
 	 * @param template create processes for new entity from all components in template
 	 * @return entity
-	 * 
 	 */
-	sage.entity = sage.spawn = function(script) {
+	sage.entity = sage.spawn = function worldEntitySpawn(script) {
 		
 		var entity = sage.pool.claim("Entity", Entity);
 				
@@ -93,13 +109,13 @@ sage.world = (function() {
 	 * @param entity entity to kill
 	 * @return sage
 	 */
-	sage.kill = function(entity) {
+	sage.kill = function worldEntityKill(entity) {
 		
 		//entity.kill();
 		db.entities({pkid:entity.pkid}).remove();
 		sage.pool.yield("Entity", entity);
 		
-		db.processes({eid:entity.pkid}).each(function(process) {			
+		db.processes({eid:entity.pkid}).each(function (process) {			
 			sage.exclude(process);			
 		});
 		
@@ -112,8 +128,7 @@ sage.world = (function() {
 	 * @param entity entity to run component for
 	 * @param cid component name to include for entity
 	 * @param initializeWith an object passed to startup of component, otherwise empty object 
-	 *   
-	 * @return process for (entity, component); in run state automatically
+	 * @return sage
 	 */
 	sage.include = function Include(entity, cid, initializeWith) {
 		
@@ -124,11 +139,14 @@ sage.world = (function() {
 		}
 		
 		process.startup(initializeWith);
-		return process;
+		return this;
 	};
 
 	/**
+	 * add many components listed in an object, every key is the name of the component
 	 * 
+	 * @see sage.include
+	 * @return sage
 	 */
 	sage.includeMany = function(entity, script) {
 			
@@ -144,7 +162,6 @@ sage.world = (function() {
 	 * 
 	 * @param process an existing process that has been included
 	 * @return sage
-	 *  
 	 */
 	sage.exclude = function Exclude(process) {
 		
@@ -177,7 +194,6 @@ sage.world = (function() {
 	 *  
 	 * @param cid name of component, should be a string
 	 * @param component an object with (startup, update, shutdown) all optional
-	 * 
 	 * @return sage 
 	 */
 	sage.component = function(cid, component) {
@@ -189,8 +205,7 @@ sage.world = (function() {
 		}
 		
 		component.pkid = cid;
-		db.components.insert(component);
-		
+		db.components.insert(component);		
 		return this;
 	};
 	
@@ -199,9 +214,7 @@ sage.world = (function() {
 	 * 
 	 * @param eid the entity id to add for
 	 * @param cid the component type to add to the entity
-	 * 
 	 * @return process
-	 * 
 	 */
 	sage.process = function(entity, cid) {
 		

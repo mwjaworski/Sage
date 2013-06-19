@@ -42,13 +42,15 @@ sage.types.process = (function ProcessDefinition() {
 		this.qid 				= 0;					// process is at queue id (array index)
 		this.entity			= undefined;	// entity object
 		this.component 	= undefined;	// component object
-		this.self 			= undefined;	// self-reference
 		this.on					= true;				// process will run component update
 		
 	});
 	
 	process.prototype = new (function ProcessPrototype() {
 		
+		/** use fn to add methods to all processes */
+		this.fn = this;
+
 		/** @see sage.kill */
 		this.kill = function() {
 			

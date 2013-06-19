@@ -35,7 +35,7 @@ sage.pool = (function SagePool() {
 		
 	var api = {}, db;
 	
-	api.initialize = function() {
+	api.initialize = function poolInitialize(configuration) {
 		
 		db = {};
 		return this;
@@ -45,19 +45,19 @@ sage.pool = (function SagePool() {
 	 * @param type what kind of object
 	 * @param function to create with new, if needed
 	 */
-	api.claim = function(type, Definition) {
+	api.claim = function poolClaim(type, Definition, options) {
 		
 		var list = db[type];
 		
 		return (list && list.length > 0)			
 			? list.pop()
-			: new Definition();
+			: new Definition(options);
 	};
 	
 	/** 
 	 * @param type what kind of object
 	 */
-	api.yield = function(type, existingObject) {
+	api.yield = function poolYield(type, existingObject) {
 		
 		var list = db[type];
 		

@@ -32,17 +32,17 @@ var sage = (function() {
 	
 	var api = {};
 	
-	api.version = "0.1.0";	
+	api.version = "0.2.9";	
 	api.type = {};	
 	
 	api.initialize = function(configuration) {
 				
 		configuration = configuration || {};
 		
-		sage.world.initialize(configuration.db);
+		sage.time.initialize(configuration.time);
 		sage.pool.initialize(configuration.pool);
+		sage.world.initialize(configuration.db);		
 		sage.kernel.initialize(configuration.kernel);		
-		sage.query.initialize(configuration.qry);
 		
 		return api;
 	};

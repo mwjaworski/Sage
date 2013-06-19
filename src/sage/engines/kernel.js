@@ -26,7 +26,7 @@
 */
 goog.provide("sage.engines.kernel");
 goog.require("sage.utilities.pool");
-goog.provide("sage.utilities.time");
+goog.require("sage.utilities.time");
 goog.require("sage.types.process");
 goog.require("sage.sage");
 
@@ -37,14 +37,17 @@ goog.require("sage.sage");
  */
 sage.kernel = (function() {
 
-	var ONE_SECOND_MS = 1000, settings, api = {}, time = sage.utilities.time;
+	var ONE_SECOND_MS = 1000;
+	var	settings, 
+			api = {}, 
+			time;
 
 	/**
 	 * 
 	 */
 	var configuration = {
 
-		updatesPerSecond: 12,
+		updatesPerSecond: 2,
 		workPerSecond: 100,
 		on: true
 	};
@@ -54,6 +57,7 @@ sage.kernel = (function() {
 	 */
 	var adt = {
 
+		tick: [],
 		queue: [],
 		add: [],
 		remove: [],
@@ -76,12 +80,15 @@ sage.kernel = (function() {
 
 			var workAccomplished;
 
-			if (settings.on) {
+			if (settings.on === false) {
+				stop();
 				return false;
 			}
 
 			beforeTime = time.real.now = Date.now();
 
+			console.log("update: " + time.real.now);
+			
 			runTimedUpdates();
 			runOperationalUpdates(workload);
 			removeProcesses();
@@ -116,11 +123,17 @@ sage.kernel = (function() {
 		 */
 		var runOperationalUpdates = function(countdown) {
 
-			var queue = adt.queue, 					
-					i = adt.current, n = adt.length;
+			var i = adt.current,					
+					queue = adt.queue, 										 
+					n = queue.length,
+					totalWork = n;
 
+			if (n === 0) {
+				return 0;
+			}
+			
 			while (countdown--) {
-
+				
 				(queue[i]).update();
 
 				i += 1;
@@ -130,9 +143,14 @@ sage.kernel = (function() {
 					i = adt.operationalIndexZero;
 				}
 
+				totalWork -= 1;
+				if (totalWork <= 0) {
+					break;
+				}
+
 				afterTime = Date.now();
 				timeDelta = afterTime - beforeTime;
-				if (timeDelta > period) {
+				if (timeDelta > period * 0.75) {
 					break;
 				}
 			}
@@ -146,28 +164,39 @@ sage.kernel = (function() {
 			var removeList = adt.remove,
 					queue = adt.queue, 
 					i = 0, n = removeList.length, 
-					process, qid;
+					process, qid, tid;
 
 			for (; i < n; i++) {
 
 				process = removeList[i];
-				qid = process.qid;
 				
-				if (process.timed !== undefined) {
+				if (process.qid) {
+									
+					if (process.timed !== undefined) {
+						
+						swap(process, queue[adt.operationalIndexZero - 1]);
+						adt.operationalIndexZero -= 1;
+					}
 					
-					swap(process, queue[adt.operationalIndexZero - 1]);
-					adt.operationalIndexZero -= 1;
+					swap(process, queue[queue.length - 1]);				
+					queue.length -= 1;
+					delete process.qid;
 				}
-				
-				swap(process, queue[queue.length - 1]);				
-				queue.length -= 1;
+
+				/*
+				if (process.tid) {
+					
+					adt.tick.length -= 1;
+					delete process.tid;
+				}
+				*/
 			}
 
 			adt.remove.length = 0;
 		};
 
 		/** */
-		var addProcesses = function() {
+		var addProcesses = function kernelAddProcesses() {
 
 			var addList = adt.add,
 					queue = adt.queue, 
@@ -177,16 +206,25 @@ sage.kernel = (function() {
 			for (; i < n; i++) {
 
 				process = addList[i];
-				qid = process.qid;
 				
-				queue[queue.length] = process;
-				process.qid = n;
-				
-				if (process.timed !== undefined) {
+				if (process.component.update) {
 					
-					swap(process, queue[adt.operationalIndexZero]);
-					adt.operationalIndexZero += 1;
+					process.qid = queue.length;
+					queue[process.qid] = process;
+					
+					if (process.timed !== undefined) {
+						
+						swap(process, queue[adt.operationalIndexZero]);
+						adt.operationalIndexZero += 1;
+					}	
 				}
+				/*
+				if (process.component.tick) {
+					
+					process.tid = adt.tick.length;
+					adt.tick[process.tid] = process;					
+				}
+				*/
 			}
 
 			adt.add.length = 0;
@@ -209,9 +247,9 @@ sage.kernel = (function() {
 		/**
 		 * 
 		 */
-		api.start = function() {
+		var start = api.start = function() {
 
-			period = ONE_SECOND_MS / settings.frameRate;
+			period = ONE_SECOND_MS / settings.updatesPerSecond;
 			afterTime = time.real.start = Date.now();
 			workload = settings.workPerSecond;
 
@@ -222,7 +260,7 @@ sage.kernel = (function() {
 		/**
 		 * 
 		 */
-		api.stop = function() {
+		var stop = api.stop = function() {
 
 			clearInterval(timer);
 		};
@@ -236,6 +274,8 @@ sage.kernel = (function() {
 	 */
 	api.initialize = function(userSettings) {
 
+		time = sage.time;
+		
 		adt.queue = [];
 		adt.add = [];
 		adt.remove = [];
@@ -289,12 +329,18 @@ sage.kernel = (function() {
 		scheduler.stop();
 	};
 
-	/** add process to adt */
+	/** 
+	 * add process to queue after current update
+	 * @return true if added, false if not  
+	 */
 	api.add = function(process) {
 
-		adt.add.push(process);
-		process.qid = adt.add.length;
-		return process.qid;
+		if (process.component.update === undefined && process.component.tick === undefined) {
+			return false;
+		}
+		
+		adt.add.push(process);		
+		return true;
 	};
 
 	/** remove process from adt and swap last active process into empty place */

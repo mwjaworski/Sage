@@ -44,46 +44,18 @@
 			update: function WalkRandomlyComponent_Update() {
 				
 				this.x += Math.random();				
-				this.z += Math.random();
-				
-				//console.log(this.x + "," + this.z);
+				this.z += Math.random();				
+				console.log(this.x + "," + this.z);
 			}
 		
 		});
 		
-		sage.component("PersonView", {
-			
-			startup: function PersonView_Startup(config) {
 				
-				
-			}
+		var personA = sage.entity().include("WalkRandomly", { x:50, z:50 });
+		var personB = personA.clone({ WalkRandomly: { x:100, z:100 } });
+		var personC = personA.clone({ WalkRandomly: { x:150, z:150 } });
 		
-		});
-				
-		var personA = sage.entity()
-											.include("WalkRandomly", { x:50, z:50 })
-											.include("PersonView");
-
-		var personB = personA.clone({
-			
-			WalkRandomly: {
-				x:100,
-				z:100
-			}
-			
-		});
-		
-		var personB = personA.clone({
-			
-			WalkRandomly: {
-				x:150,
-				z:150
-			}
-			
-		});
-
-		
-		//sage.kernel.start();
+		// sage.kernel.start();
 		
   </script>
   
