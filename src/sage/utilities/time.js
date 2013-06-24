@@ -54,8 +54,12 @@ sage.time = (function SageTime() {
 	/**
 	 * @return current game time
 	 */
-	api.now = function() {
+	api.now = function(v) {
 
+		if (v !== undefined) {
+			game.now = v;
+		}
+		
 		return game.now;
 	};
 
@@ -69,29 +73,41 @@ sage.time = (function SageTime() {
 
 	/**
 	 * 
+	 * 
+	 * TODO convert from string format "4s+2ms(23)"
+	 * 
 	 */
 	api.convertTimedProcessFormat = function(profile) {
 		
-		var units = (profiles.units === undefined) ? "ms" 
-								: profiles.units,
-				convertToMilliseconds = 	(units === "ms") ? 1
-																: (units === "s")	? 1000
-																: (units === "min")	? 60000
-																: 0;
+		var convertToMilliseconds = function(units) {
+			
+			return		(units === "ms") 			? 1
+							: (units === "s")				? 1000
+							: (units === "min")			? 60000
+							: 1;
+		};
 		
 		profile.repeat 		= (profile.repeat === undefined) 
 												? -1 : profile.repeat;
 		
-		profile.frequency = (profile.frequency === undefined) 
-												? 1 : profile.frequency;
+		profile.rateUnit	= convertToMilliseconds(profile.rateUnit);
+		profile.rate 			= (profile.rate === undefined) 
+												? 1 : profile.rate;
 		
-		profile.offset		= (profile.offset === undefined)
-												? 0 : profile.offset;
+		profile.delayUnit	= convertToMilliseconds(profile.delayUnit);
+		profile.delay			= (profile.delay === undefined)
+												? 0 : profile.delay;
 		
-		if (units !== "game") {
+		if (profile.rateUnit) {
+			
+			profile.rate *= profile.rateUnit;
+			delete profile.rateUnit;
+		}
 		
-			profile.offset 		*= convertToMilliseconds;
-			profile.frequency *= convertToMilliseconds;
+		if (profile.delayUnit) {
+			
+			profile.delay *= profile.delayUnit;
+			delete profile.delayUnit;
 		}
 
 		profile.lastUpdate = Date.now();
@@ -100,14 +116,14 @@ sage.time = (function SageTime() {
 	};
 	
 	/**
-	 * 
+	 * TODO reconcile units value for calculation
+	 * TODO use delay in calculation of process ready to fire
 	 */
 	api.isProcessReadyToFire = function(process) {
 		
-		var profile = process.timed,
-				currentTime	= (units === "game") ? game.now : real.now;
+		var profile = process.timed;
 
-		if ((currentTime - profile.lastUpdate) >= profile.frequency) {
+		if ((real.now - profile.lastUpdate) >= profile.rate) {
 			
 			if (profile.repeat > 0) {
 				profile.repeat -= 1;
@@ -115,6 +131,8 @@ sage.time = (function SageTime() {
 			else if (profile.repeat === 0) {
 				process.remove();
 			}
+		
+			profile.lastUpdate = real.now;
 			return true;
 		}
 		

@@ -26,7 +26,6 @@
 */
 goog.provide("sage.engines.world");
 goog.require("sage.utilities.pool");
-goog.require("sage.engines.kernel");
 goog.require("sage.types.entity");
 goog.require("sage.types.process");
 goog.require("sage.sage");
@@ -37,7 +36,7 @@ goog.require("sage.sage");
 sage.world = (function() {
 
 	var Entity, Process,	
-			configuration,
+			configuration, pool,
 			api = {};
 
 	/**  
@@ -63,23 +62,6 @@ sage.world = (function() {
 		return this;
 	};
 	
-	/**
-	 * query the world
-	 */
-	sage.query = {
-			
-		/** @return component or undefined */
-		getComponent: function getComponent(cid) {
-			
-			return api.components({pkid:cid}).first();
-		},
-			
-		/** @return process or undefined */
-		getProcess: function getProcess(eid, cid) {
-			
-			return api.processes({eid:eid, cid:cid}).first();
-		}	
-	};
 	
 	/**
 	 * create a new entity as blank or from a template
@@ -87,7 +69,7 @@ sage.world = (function() {
 	 * @param template create processes for new entity from all components in template
 	 * @return entity
 	 */
-	sage.entity = sage.spawn = function worldEntitySpawn(script) {
+	api.entity = api.spawn = function worldEntitySpawn(script) {
 		
 		var entity = sage.pool.claim("Entity", Entity);
 				
@@ -109,9 +91,8 @@ sage.world = (function() {
 	 * @param entity entity to kill
 	 * @return sage
 	 */
-	sage.kill = function worldEntityKill(entity) {
+	api.kill = function worldEntityKill(entity) {
 		
-		//entity.kill();
 		db.entities({pkid:entity.pkid}).remove();
 		sage.pool.yield("Entity", entity);
 		
@@ -130,7 +111,7 @@ sage.world = (function() {
 	 * @param initializeWith an object passed to startup of component, otherwise empty object 
 	 * @return sage
 	 */
-	sage.include = function Include(entity, cid, initializeWith) {
+	api.include = function Include(entity, cid, initializeWith) {
 		
 		var process = sage.process(entity, cid);	
 		
@@ -142,20 +123,6 @@ sage.world = (function() {
 		return this;
 	};
 
-	/**
-	 * add many components listed in an object, every key is the name of the component
-	 * 
-	 * @see sage.include
-	 * @return sage
-	 */
-	sage.includeMany = function(entity, script) {
-			
-		_.forEach(script, function(initialize, cid) {			
-			sage.include(entity, cid, initialize);						
-		});	
-		
-		return this;
-	};
 	
 	/**  
 	 * remove process from system
@@ -163,31 +130,14 @@ sage.world = (function() {
 	 * @param process an existing process that has been included
 	 * @return sage
 	 */
-	sage.exclude = function Exclude(process) {
+	api.exclude = function Exclude(process) {
 		
-		db.processes({pkid:process.pkid}).remove();		
+		db.processes({pkid:process.pkid}).remove();									
+		process.shutdown();
 		sage.pool.yield("Process", process);
-		sage.kernel.remove(process.qid);			
-		process.shutdown();							
-
 		return this;
 	};
 	
-	/**
-	 * all for entity
-	 * some for entity
-	 * all components across entities
-	 * 
-	 */
-	sage.excludeMany = function(entity, script) {
-			
-		_.forEach(script, function(cid) {			
-			sage.exclude(entity, cid);			
-		});	
-		
-		return this;
-	};
-
 	
 	/** 
 	 * define a new component
@@ -196,7 +146,7 @@ sage.world = (function() {
 	 * @param component an object with (startup, update, shutdown) all optional
 	 * @return sage 
 	 */
-	sage.component = function(cid, component) {
+	api.component = function RegisterComponent(cid, component) {
 		
 		var alreadyExists = db.components({cid:cid}).first();
 		
@@ -216,7 +166,7 @@ sage.world = (function() {
 	 * @param cid the component type to add to the entity
 	 * @return process
 	 */
-	sage.process = function(entity, cid) {
+	api.process = function(entity, cid) {
 		
 		var process 			= false,
 				alreadyExists = db.processes({eid:entity.pkid, cid:cid}).first();
@@ -230,8 +180,7 @@ sage.world = (function() {
 		process.eid 				= entity.pkid;
 		process.cid 				= cid;
 		process.entity 			= entity;
-		process.component		= db.components({pkid:cid}).first();				 	
-		process.qid 				= sage.kernel.add(process);	
+		process.component		= db.components({pkid:cid}).first();
 		
 		configuration.nextProcessID = process.pkid + 1;
 		db.processes.insert(process);

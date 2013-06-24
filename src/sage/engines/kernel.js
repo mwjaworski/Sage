@@ -104,15 +104,17 @@ sage.kernel = (function() {
 		 */
 		var runTimedUpdates = function() {
 
-			var queue = adt.queue, 
-					i = 0, n = adt.operationalIndexZero, 
-					process, time = sage.time,
+			var process, 
+					queue = adt.queue, 
+					i = 0, 
+					n = adt.operationalIndexZero, 
+					time = sage.time,
 					yield = sage.pool.yield;
 
 			for (; i < n; i++) {
 
 				process = queue[i];
-				if (time.processTimeReadyToFire(process)) {
+				if (time.processTimeReadyToFire(process)) {					
 					process.update();
 				}
 			}
@@ -269,6 +271,7 @@ sage.kernel = (function() {
 
 	})();
 
+	
 	/**
 	 * @param settings assign performance metrics
 	 */
@@ -289,6 +292,7 @@ sage.kernel = (function() {
 		return settings
 	};
 
+	
 	/**  */
 	api.settings = function(userSettings) {
 				
@@ -298,6 +302,7 @@ sage.kernel = (function() {
 		return settings;
 	}
 
+	
 	/** */
 	api.on = function(value) {
 
@@ -305,6 +310,7 @@ sage.kernel = (function() {
 		return (settings.on);
 	};
 
+	
 	/** (re)start kernel */
 	api.start = api.play = function() {
 
@@ -313,6 +319,7 @@ sage.kernel = (function() {
 		scheduler.start();
 	};
 
+	
 	/** pause kernel, remember execute position in adt */
 	api.pause = function() {
 
@@ -321,6 +328,7 @@ sage.kernel = (function() {
 		scheduler.stop();
 	};
 
+	
 	/** stop kernel, on restart begin at first process */
 	api.stop = function() {
 
@@ -329,6 +337,7 @@ sage.kernel = (function() {
 		scheduler.stop();
 	};
 
+	
 	/** 
 	 * add process to queue after current update
 	 * @return true if added, false if not  
@@ -343,6 +352,7 @@ sage.kernel = (function() {
 		return true;
 	};
 
+	
 	/** remove process from adt and swap last active process into empty place */
 	api.remove = function(object) {
 

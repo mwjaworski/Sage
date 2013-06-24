@@ -30,22 +30,177 @@ goog.provide("sage.sage");
 /**  */
 var sage = (function() {
 	
-	var api = {};
+	var api = {},
+			world, kernel, time, pool;
 	
 	api.version = "0.2.9";	
 	api.type = {};	
 	
+	/**
+	 * 
+	 */
 	api.initialize = function(configuration) {
 				
 		configuration = configuration || {};
 		
-		sage.time.initialize(configuration.time);
-		sage.pool.initialize(configuration.pool);
-		sage.world.initialize(configuration.db);		
-		sage.kernel.initialize(configuration.kernel);		
+		time 		= sage.time;
+		pool 		= sage.pool;
+		world 	= sage.world;
+		kernel 	= sage.kernel;
+		
+		time.initialize(configuration.time);
+		pool.initialize(configuration.pool);
+		world.initialize(configuration.db);		
+		kernel.initialize(configuration.kernel);		
+
+		// only expose database
+		sage.world = new function() {
+			
+			this.entities 	= world.entities;
+			this.components = world.components;
+			this.processes 	= world.processes;			
+		};
 		
 		return api;
 	};
+	
+	
+	/**
+	 * query the world
+	 */
+	sage.query = {
+			
+		/** @return component or undefined */
+		getComponent: function getComponent(cid) {
+			
+			return api.components({pkid:cid}).first();
+		},
+			
+		/** @return process or undefined */
+		getProcess: function getProcess(eid, cid) {
+			
+			return api.processes({eid:eid, cid:cid}).first();
+		}	
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.component = function RegisterComponent(cid, component) {
+		
+		if (component.timed !== undefined) {
+			component.timed = time.convertTimedProcessFormat(component.timed);
+		}
+		
+		world.component(cid, component);
+		return api;
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.process = function(entity, cid) {
+		
+		var process = world.process(entity, cid);
+		process.qid = kernel.add(process);
+		return process;
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.entity = api.spawn = function(script) {
+		
+		return world.spawn(script);
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.kill = function(entity) {
+		
+		world.kill(entity);
+		return api;
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.include = function(entity, cid, initializeWith) {
+		
+		world.include(entity, cid, initializeWith);
+		return api;
+	};
+	
+	
+	/**
+	 * add a component to an entity - creates a process
+	 * 
+	 * @param entity entity to run component for
+	 * @param cid component name to include for entity
+	 * @param initializeWith an object passed to startup of component, otherwise empty object 
+	 * @return sage
+	 */
+	api.include = function Include(entity, cid, initializeWith) {
+		
+		var process = api.process(entity, cid);	
+		
+		if (!process) {
+			return process;
+		}
+		
+		process.startup(initializeWith);
+		return api;
+	};
+	
+	
+	/**
+	 * add many components listed in an object, every key is the name of the component
+	 * 
+	 * @see sage.include
+	 * @return sage
+	 */
+	api.includeMany = function IncludeMany(entity, script) {
+			
+		_.forEach(script, function(initialize, cid) {			
+			api.include(entity, cid, initialize);						
+		});	
+		
+		return api;
+	};
+	
+	
+	/**
+	 * 
+	 */
+	api.exclude = function Exclude(process) {
+		
+		kernel.remove(process.qid);
+		world.exclude(process);						
+		return api;
+	};
+	
+	
+	/**
+	 * all for entity
+	 * some for entity
+	 * all components across entities
+	 * 
+	 */
+	api.excludeMany = function ExcludeMany(entity, script) {
+			
+		_.forEach(script, function(cid) {			
+			api.exclude(entity, cid);			
+		});	
+		
+		return api;
+	};
+	
 	
 	return api;
 	

@@ -50,12 +50,28 @@
 		
 		});
 		
+		sage.component("Talk", {
+			
+			startup: function() {
 				
+				console.log("talk-startup");
+			},
+			
+			update: function() {
+				
+				console.log("talk-update");
+			}
+			
+		});
+		
+		/*
 		var personA = sage.entity().include("WalkRandomly", { x:50, z:50 });
 		var personB = personA.clone({ WalkRandomly: { x:100, z:100 } });
 		var personC = personA.clone({ WalkRandomly: { x:150, z:150 } });
+		*/
 		
-		// sage.kernel.start();
+		sage.entity().include("Talk");
+		sage.kernel.start();
 		
   </script>
   
