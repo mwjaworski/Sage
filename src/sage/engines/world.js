@@ -168,10 +168,9 @@ sage.world = (function() {
 	 */
 	api.process = function(entity, cid) {
 		
-		var process 			= false,
-				alreadyExists = db.processes({eid:entity.pkid, cid:cid}).first();
+		var process = db.processes({eid:entity.pkid, cid:cid}).first();
 		
-		if (alreadyExists) {
+		if (process) {
 			return process;
 		}
 		
