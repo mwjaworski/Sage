@@ -1,0 +1,570 @@
+<?xml version="1.0"?>
+<!DOCTYPE project>
+<project 
+	name="Client-Application Build Script [MXT]" 
+	default="build.dev"
+	basedir="./">
+
+	<!-- http://www.webapp-performance.com/general-tips/removing-unused-css-whitespace-with-ant-replaceregexp -->
+	
+	<!-- get todays time -->
+	<tstamp/>
+	
+	<!-- load shell environment -->
+	<property environment="env" />
+			
+	<!-- load property files -->
+	<property file="config/master.properties" />
+	
+	<!-- parse text between commas -->
+	<property name="singleParser" value="([^,]*)[, ]+" />
+	<property name="dupleParser" 	value="\s*${singleParser}(.*)" />
+	<property name="tupleParser" 	value="\s*${singleParser}${singleParser}(.*)" />
+	<property name="quadParser" 	value="\s*${singleParser}${singleParser}${singleParser}(.*)" />
+	
+	<!-- os check; set os specific properties -->
+	<condition property="os_properties" value="config/unix.properties">
+   	<and>
+   		<os family="unix" />
+			<not><os family="mac" /></not>
+   	</and>
+  </condition>
+	
+  <condition property="os_properties" value="config/windows.properties">
+   <os family="windows" />
+  </condition>
+  
+	<condition property="os_properties" value="config/mac.properties">
+   <os family="mac" />
+  </condition>
+	
+	<property file="${os_properties}" />
+	
+	<!-- useful Ant tasks -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+		<classpath>
+			<pathelement location="${tool.ant-contrib}" />
+		</classpath>
+	</taskdef>
+	
+	<!-- BUILD TARGETS -->
+	<target name="build.dev">
+		<antcall target="-exec-dev">
+			<param name="config.css.minify" value="${config.dev.css.minify}" />
+			<param name="config.sass.mode" value="${config.dev.sass.mode}" />
+			<param name="config.sass.options" value="${config.dev.sass.options}" />
+		</antcall>
+	</target>
+	<target name="-exec-dev" depends="-build.shared, -script-dev, -export-archive" />
+
+	<target name="test.unit">
+		<antcall target="-exec-test-unit">
+			<param name="config.css.minify" value="${config.dev.css.minify}" />
+			<param name="config.sass.mode" value="${config.dev.sass.mode}" />
+			<param name="config.sass.options" value="${config.dev.sass.options}" />
+		</antcall>
+	</target>
+	<target name="-exec-test-unit" depends="build.dev, -test.unit" />
+
+	<target name="build.stage">
+		<antcall target="-exec-stage">
+			<param name="config.css.minify" value="${config.stage.css.minify}" />
+			<param name="config.js.minify" value="${config.stage.js.minify}" />
+			<param name="config.sass.mode" value="${config.stage.sass.mode}" />
+			<param name="config.sass.options" value="${config.stage.sass.options}" />
+			<param name="config.compiler.warning" value="${config.stage.compiler.warning}" />
+			<param name="config.compiler.output" value="${config.stage.compiler.output}" />
+			<param name="config.compiler.define" value="${config.stage.compiler.define}" />
+		</antcall>
+	</target>
+	<target name="-exec-stage" depends="-build.shared, test.unit, -script-prod, -export-archive" />
+
+	<target name="build.prod">
+		<antcall target="-exec-prod">
+			<param name="config.css.minify" value="${config.prod.css.minify}" />
+			<param name="config.js.minify" value="${config.prod.js.minify}" />
+			<param name="config.sass.mode" value="${config.prod.sass.mode}" />
+			<param name="config.sass.options" value="${config.prod.sass.options}" />
+			<param name="config.compiler.warning" value="${config.prod.compiler.warning}" />
+			<param name="config.compiler.output" value="${config.prod.compiler.output}" />
+			<param name="config.compiler.define" value="${config.prod.compiler.define}" />
+		</antcall>
+	</target>
+	<target name="-exec-prod" depends="-build.shared, -script-prod, -export-archive" />
+
+	<target name="test.compiler">
+		<antcall target="-exec-test-compiler">
+			<param name="config.css.minify" value="${config.stage.css.minify}" />
+			<param name="config.sass.mode" value="${config.stage.sass.mode}" />
+			<param name="config.sass.options" value="${config.stage.sass.options}" />
+			<param name="config.js.minify" value="${config.test.js.minify}" />
+			<param name="config.compiler.warning" value="${config.test.compiler.warning}" />
+			<param name="config.compiler.output" value="${config.test.compiler.output}" />
+			<param name="config.compiler.define" value="${config.test.compiler.define}" />
+		</antcall>
+	</target>
+	<target name="-exec-test-compiler" depends="build.dev, -script-prod, -export-archive" />
+		
+	<target name="watch.sass">
+		<antcall target="-watch.sass">
+			<param name="config.css.minify" value="${config.live.css.minify}" />
+			<param name="config.sass.mode" value="${config.live.sass.mode}" />
+			<param name="config.sass.options" value="${config.live.sass.options}" />
+		</antcall>
+	</target>
+	<target name="-watch.sass" depends="-style-compile-sass" />
+	
+	<target name="-build.shared" depends="-intro, -clean, -build-dependencies, -script-doc, -style-compile" />
+
+	<property name="app.dir.base.escaped" value="${app.dir.base}" />
+	<propertyregex 	property="app.dir.base.escaped"
+	               	input="${app.dir.base}"
+									override="true"             
+									regexp="(\s)"
+	               	replace="\\\\ "
+	               	global="true" />
+	
+	<echo>${app.dir.base}</echo>
+	<echo>${app.dir.base.escaped}</echo>
+	
+	<!-- MASTER TARGET -->
+	<target name="-intro" 
+					description="introductory message about build script">
+
+		<echo message="Front-End Application Build Script" />
+		<echo message="Member Experience Team" />
+		<echo message="--------------------------------------------------------------" />
+		<echo message="Team: ${info.team}" />
+		<echo message="Project: ${app.name}" />
+		<echo message="Point of Contact: ${info.poc}" />
+		<echo message="Email of Contact: ${info.email}" />
+		<echo message="Publish Date: ${TODAY}" />
+		<echo message="Publish Version: ${info.version}" />
+	</target>
+	
+	
+	<!-- MASTER TARGET -->
+	<condition property="wipe-deploy">
+		<equals arg1="${deploy.wipe}" arg2="true" />
+	</condition>
+	<target name="-clean"
+					if="wipe-deploy"
+					description="application bin folder">
+
+		<delete dir="${app.dir.base}/${app.dir.bin}" />
+		<mkdir dir="${app.dir.base}/${app.dir.bin}" />
+		<echo message="cleaned previous build." />
+	</target>	
+	
+	<!-- MASTER TARGET -->
+	<target name="-test.unit" 
+					description="test js and css source">
+		
+		<sequential>
+	
+			<exec executable="${tool.phantom}" 
+						outputproperty="test.result">							
+				<arg value="${tool.test.automate}" />
+				<arg value="${app.dir.base}/${app.path.test}" />														
+			</exec>
+
+			<if><contains string="${test.result}" 
+										substring="passed, 0 failed" 
+										casesensitive="false" />
+				<then>
+					<echo message="${test.result}" />
+				</then>
+				<else>
+					<echo message="${test.result}" />
+					<fail message="build script ok; unit tests did not pass." />
+				</else>
+			</if>
+		</sequential>
+		
+	</target>
+	
+	
+	<!-- MASTER TARGET -->
+	<target name="-build-dependencies" 
+					description="copy css and js library dependencies to deploy">
+		
+		<!-- copy css/js dependencies -->
+		<copy todir="${app.dir.base}/${app.dir.bin}/">
+	    <fileset dir="${app.dir.base}/${app.path.js}" includes="*.js" />
+			<fileset dir="${app.dir.base}/${app.path.css}" includes="*.css" />
+	  </copy>
+		<echo message="${app.name}'s js/css dependencies copied to ${app.dir.base}/" />
+		
+	</target>	
+	
+	<!-- MASTER TARGET -->
+	<target name="-export-archive" 
+					description="copy folder in source out to deployment">
+
+		<for list="${app.archives}" delimiter=";" param="archive">
+			<sequential>
+				
+				<propertyregex property="int.archive.from"
+				              input="@{archive}"
+				              regexp="${dupleParser}"
+				              select="\1"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.archive.to"
+				              input="@{archive}"
+											regexp="${dupleParser}"
+									    select="\2"
+											override="true"
+				              casesensitive="false" />
+				
+				<delete file="${app.dir.base}/${int.archive.to}/" />
+				<mkdir dir="${app.dir.base}/${int.archive.to}/" />
+				<copy todir="${app.dir.base}/${int.archive.to}">
+			    <fileset dir="${app.dir.base}/${int.archive.from}"/>
+			  </copy>
+				
+				<echo>archive copied from ${int.archive.from} to ${int.archive.to}</echo>
+			</sequential>				
+		</for>
+				
+	</target>
+
+	<condition property="cond-docs-enable">
+		<equals arg1="${docs.enable}" arg2="true" />
+	</condition>
+	<target name="-script-doc"
+					description="generate js docs"
+					if="cond-docs-enable">
+
+		<delete dir="${app.dir.base}/${app.dir.docs}/" />
+		<mkdir 	dir="${app.dir.base}/${app.dir.docs}/" />
+
+		<for list="${app.document.scripts}" delimiter=";" param="script">
+					<sequential>
+						
+						<propertyregex property="int.script.dir"
+						              input="@{script}"
+						              regexp="${dupleParser}"
+						              select="\1"
+													override="true"
+						              casesensitive="false" />
+						
+						<propertyregex property="int.doc.dir"
+						              input="@{script}"
+													regexp="${dupleParser}"
+											    select="\2"
+													override="true"
+						              casesensitive="false" />
+						
+						<java jar="${tool.jsdoc}"
+									fork="true"									
+						      failonerror="true">
+							<arg value="${tool.jsdoc.dir}/app/run.js" />						
+							<arg value="-a" />
+							<arg value="-r=8" />
+							<arg value="-t=${tool.jsdoc.dir}/templates/jsdoc" />
+							<arg value="-d=${app.dir.base}/${int.doc.dir}" />
+							<arg value="${app.dir.base}/${int.script.dir}" />
+						</java>
+			
+						<echo message="jsdoc created for ${int.doc.dir}" />
+						
+					</sequential>				
+				</for>
+	</target>
+	
+	<!-- MASTER TARGET -->
+	<condition property="cond-js-enable">
+		<equals arg1="${js.enable}" arg2="true" />
+	</condition>
+	<target name="-script-dev" 
+					description="calculate dependencies for goog library"
+					if="cond-js-enable">
+		
+		<for list="${app.compile.scripts.dev}" delimiter=";" param="script">
+			<sequential>
+				
+				<propertyregex property="int.script.root"
+				              input="@{script}"
+				              regexp="${tupleParser}"
+				              select="\1"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.script.prefix"
+				              input="@{script}"
+											regexp="${tupleParser}"
+									    select="\2"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.script.hotload"
+				              input="@{script}"
+											regexp="${tupleParser}"
+									    select="\3"
+											override="true"
+				              casesensitive="false" />				
+				
+				<!--
+				<delete file="${app.dir.bin}/src/" />
+				<mkdir dir="${app.dir.base}/${app.dir.bin}/src/" />
+				<copy todir="${app.dir.base}/${app.dir.bin}/src/">
+			    <fileset dir="${app.dir.base}/${int.script.root}" includes="**/*.js" />
+			  </copy>
+				-->
+				<delete file="${app.dir.base}/${int.script.hotload}" />
+				<exec executable="${tool.python}"
+							output="${app.dir.base}/${int.script.hotload}">
+					<arg value="${tool.closure-dependency}" />
+					<arg value="--root_with_prefix=${app.dir.base}/src/ ${int.script.prefix}" />
+				</exec>
+					
+				<echo message="goog hotloader calculated ${int.script.hotload}" />
+				
+			</sequential>				
+		</for>
+	</target>	
+
+	
+	<!-- MASTER TARGET -->	
+	<target name="-script-prod" 
+					description="compile js library to deploy"
+					if="cond-js-enable">
+		
+		<for list="${app.compile.scripts.prod}" delimiter=";" param="compile">
+			<sequential>
+				
+				<propertyregex property="int.compile.namespace"
+				              input="@{compile}"
+				              regexp="${tupleParser}"
+				              select="\1"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.compile.source"
+				              input="@{compile}"
+											regexp="${tupleParser}"
+									    select="\2"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.compile.output"
+				              input="@{compile}"
+											regexp="${tupleParser}"
+									    select="\3"
+											override="true"
+				              casesensitive="false" />	
+				
+				<delete file="${app.dir.base}/${int.compile.output}" />
+				<exec executable="${tool.python}">
+				
+					<arg value="${tool.closure-builder}" />					
+					<arg value="--root=${dir.build.lib}/" />
+					<arg value="--root=${app.dir.base}/${int.compile.source}" />
+					<arg value="--namespace=${int.compile.namespace}" />
+					
+					<!-- or "script" to just concatenate and not use compiler -->
+					<arg value="--output_mode=compiled" />
+					<arg value="--compiler_jar=${tool.closure-compiler}" />
+					<arg value="${config.js.minify}" />
+					<arg value="${config.compiler.warning}" />
+					<arg value="${config.compiler.output}" />						
+					<arg value="--compiler_flags=--only_closure_dependencies" /> 
+					<arg value="--compiler_flags=--closure_entry_point=${int.compile.namespace}" />
+					<arg value="--output_file=${app.dir.base}/${int.compile.output}" />
+					
+				</exec>			
+				
+				<echo file="${app.dir.base}/${int.compile.output}" 
+							append="true" 
+							encoding="UTF-8"
+							message="${line.separator}/* ${app.name} version ${info.version} in utf-8 */" />
+				
+				<echo message="compiled to ${int.compile.output}" />
+			</sequential>				
+		</for>
+		
+	</target>		
+	
+
+	<!-- MASTER TARGET -->
+	<condition property="cond-css-enable">
+		<equals arg1="${css.enable}" arg2="true" />
+	</condition>
+	<target name="-style-compile" 
+					description="build all css files"
+					if="cond-css-enable">
+				
+		<if><contains string="${css.precompiler}" substring="none" />
+			<then>
+				<echo message="css minification disabled" />
+	    </then>			
+	    <else>
+	    	<antcall target="-style-compile-${css.precompiler}"></antcall>
+	    </else>
+		</if>
+				
+	</target>
+
+	<!-- CSS WITH YUI -->	
+	<target name="-style-compile-yui" 
+					if="cond-css-enable"
+					description="build all css files with yui; copy to publish folder">
+
+		<for list="${app.compile.styles}" delimiter=";" param="style">
+			<sequential>
+				
+				<propertyregex property="int.style.from"
+					              input="@{style}"
+					              regexp="${quadParser}"
+					              select="\1"
+												override="true"
+					              casesensitive="false" />
+				
+				<propertyregex property="int.style.to"
+					              input="@{style}"
+												regexp="${quadParser}"
+										    select="\2"
+												override="true"
+					              casesensitive="false" />
+				
+				<propertyregex property="int.style.instr"
+					              input="@{style}"
+												regexp="${quadParser}"
+										    select="\3"
+												override="true"
+					              casesensitive="false" />	
+				
+				<propertyregex property="int.style.path"
+					              input="@{style}"
+												regexp="${quadParser}"
+										    select="\4"
+												override="true"
+					              casesensitive="false" />
+				
+				<if><equals arg1="${int.style.instr}" arg2="import" />
+					<then>
+						
+						<loadfile property="list-temp.css" srcFile="${app.dir.base}/${int.style.from}"/>
+						
+						<propertyregex 	property="list.css" 
+											    	input="${list-temp.css}" 
+											    	regexp='[\s|.]*?@import url\("(.*?)"\);\s' 
+											    	replace="${int.style.path}\1, " 
+											    	casesensitive="false" 
+											    	global="true" />
+						<propertyregex 	property="list.css.escaped"
+						               	input="${list.css}"
+														override="true"             
+														regexp="(\s)"
+						               	replace="\\\\ "
+						               	global="true" />
+
+						<mkdir dir="${basedir}/workshop" />
+						<concat destfile="${basedir}/workshop/intermediate.css">
+							<filelist dir="${app.dir.base}" files="${list.css}" />	
+						</concat>
+												
+						<var name="list.css.escaped" unset="true"/>
+						<var name="list-temp.css" unset="true"/>
+						<var name="list.css" unset="true"/>						
+										
+					</then><else>
+						<copy file="${app.dir.base}/${int.style.from}" tofile="${basedir}/workshop/intermediate.css"/>
+					</else>
+				</if>
+				
+				<delete file="${app.dir.base}/${int.style.to}" />				
+				<java jar="${tool.yui}"
+				      fork="true"
+				      failonerror="true">
+																				
+					<arg value="${basedir}/workshop/intermediate.css" />
+					<arg value="-o" />
+					<arg value="${basedir}/workshop/compressed.css" />
+				</java>				
+				
+				<copy file="${basedir}/workshop/compressed.css" tofile="${app.dir.base}/${int.style.to}" />				
+				<delete dir="${basedir}/workshop"/>
+				
+				<echo>style compressed from ${app.dir.base.escaped}/${int.style.from} to ${app.dir.base.escaped}/${int.style.to}</echo>
+			</sequential>				
+		</for>
+				
+	</target>	
+	
+	<!-- CSS WITH LESS -->
+	<target name="-style-compile-less" 
+					if="cond-css-enable"
+					description="build all less files; copy to publish folder">
+
+		<for list="${app.compile.styles}" delimiter=";" param="style">
+			<sequential>
+				
+				<propertyregex property="int.style.from"
+				              input="@{style}"
+				              regexp="${dupleParser}"
+				              select="\1"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.style.to"
+				              input="@{style}"
+											regexp="${dupleParser}"
+									    select="\2"
+											override="true"
+				              casesensitive="false" />
+				
+				<delete file="${app.dir.base}/${int.style.to}" />
+				<exec executable="${tool.node}">
+					<arg value="${tool.less}" />
+					<arg value="${config.css.minify}" />
+					<arg value="${app.dir.base}/${int.style.from}" />
+					<arg value="${app.dir.base}/${int.style.to}" />				
+				</exec>
+				
+				<echo>style compressed from ${int.style.from} to ${int.style.to}</echo>
+			</sequential>				
+		</for>
+				
+	</target>
+	
+	<!-- CSS WITH SASS -->
+	<target name="-style-compile-sass"
+					if="cond-css-enable"
+					description="build all scss files; copy to publish folder">
+
+		<for list="${app.compile.styles}" delimiter=";" param="style">
+			<sequential>
+				
+				<propertyregex property="int.style.from"
+				              input="@{style}"
+				              regexp="${dupleParser}"
+				              select="\1"
+											override="true"
+				              casesensitive="false" />
+				
+				<propertyregex property="int.style.to"
+				              input="@{style}"
+											regexp="${dupleParser}"
+									    select="\2"
+											override="true"
+				              casesensitive="false" />
+				
+				<delete file="${app.dir.base}/${int.style.to}" />			
+				<exec executable="compass"
+							dir="${app.dir.base}">					
+					<arg value="compile" />																				
+					<arg value="--debug-info" />
+					<arg value="--no-line-comments" />				
+					<arg value="--force" />					
+				</exec>
+								
+				<echo>style compressed from ${int.style.from} to ${int.style.to}</echo>
+			</sequential>				
+		</for>
+				
+	</target>	
+
+</project>
