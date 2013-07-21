@@ -25,7 +25,7 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 goog.provide("sage.types.entity");
-goog.require("sage.sage");
+goog.require("sage.core");
 
 /**
  * an object defined by the collection of components added to it

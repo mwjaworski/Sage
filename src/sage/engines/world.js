@@ -28,7 +28,7 @@ goog.provide("sage.engines.world");
 goog.require("sage.utilities.pool");
 goog.require("sage.types.entity");
 goog.require("sage.types.process");
-goog.require("sage.sage");
+goog.require("sage.core");
 
 /** 
  * setup databases for entity system (entity, component, process)

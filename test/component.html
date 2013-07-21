@@ -14,12 +14,9 @@
 	<script src="../lib/hotload.js"></script>
 	<script>
  	 	goog.hotloadVersion("1");
-		goog.hotloadPrefix("../src/");	
+ 	 	goog.hotloadPrefix("../src/");
 	</script>
-  <script src="../src/sage/library.js"></script>
-  <script>
-	  goog.require("sage.library");
-  </script>  
+  <script>goog.require("sage.sage");</script>  
   <script>
 
   	sage.initialize().component("Position", {

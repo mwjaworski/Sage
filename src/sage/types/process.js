@@ -25,7 +25,7 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 goog.provide("sage.types.process");
-goog.require("sage.sage");
+goog.require("sage.core");
 
 /**
  * represents a (entity, component) duple

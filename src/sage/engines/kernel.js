@@ -28,7 +28,7 @@ goog.provide("sage.engines.kernel");
 goog.require("sage.utilities.pool");
 goog.require("sage.utilities.time");
 goog.require("sage.types.process");
-goog.require("sage.sage");
+goog.require("sage.core");
 
 /**
  * @name process kernel

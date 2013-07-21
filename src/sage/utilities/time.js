@@ -25,7 +25,8 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 goog.provide("sage.utilities.time");
-goog.require("sage.sage");
+goog.require("sage.core");
+
 /**
  * memory pool, used for entity and process creation/destruction
  */
